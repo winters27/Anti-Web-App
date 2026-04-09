@@ -20,7 +20,7 @@ We have consolidated the entire backend into a single `Setup.bat` wizard. Absolu
 
 ### 1. Launch the Wizard
 Double-click `Setup.bat` in your folder. A terminal will open and prompt you:
-`[?] Please paste your hardware Web App URL (e.g. https://gm.wlmouse.gg):`
+`[?] Please paste your hardware Web App URL (e.g. https://dashboard.your-device.com):`
 
 Paste your link and hit `ENTER`.
 
@@ -35,5 +35,5 @@ The wizard handles everything else automatically:
 2. It fetches the site's official `favicon.ico` from the web.
 3. It natively compiles a brand new, silent `Anti-Web-App.exe` executable using Windows' hidden internal C# compiler.
 
-Done! You now have a blazingly fast, standalone `.exe` you can rename to whatever your hardware is and pin to your taskbar!
+Done! You now have a blazingly fast, standalone `.exe` you can rename to whatever your hardware is (e.g., `DeviceDashboard.exe`) and pin to your taskbar!
 

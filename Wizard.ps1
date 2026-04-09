@@ -6,7 +6,7 @@ Write-Host "============================================================" -Foreg
 Write-Host "      Anti-Web-App | Native Desktop Wrapper Setup" -ForegroundColor White
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
-$Url = Read-Host " [?] Please paste your hardware Web App URL (e.g. https://gm.wlmouse.gg) "
+$Url = Read-Host " [?] Please paste your hardware Web App URL (e.g. https://dashboard.your-device.com) "
 
 if ([string]::IsNullOrWhiteSpace($Url)) {
     Write-Host " [ ERROR ] URL cannot be empty. Exiting..." -ForegroundColor Red
@@ -14,7 +14,7 @@ if ([string]::IsNullOrWhiteSpace($Url)) {
     Exit
 }
 
-$AppName = Read-Host " [?] What do you want to name the executable? (e.g. Akitsu) "
+$AppName = Read-Host " [?] What do you want to name the executable? (e.g. DashboardApp) "
 if ([string]::IsNullOrWhiteSpace($AppName)) {
     $AppName = "Anti-Web-App"
 }
