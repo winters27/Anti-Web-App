@@ -86,28 +86,45 @@ foreach ($proc in Get-Process msedge -ErrorAction SilentlyContinue) {
             Write-Host " [ SUCCESS ] Extracted Dimensions: $($cleanW)x$($cleanH)" -ForegroundColor Green
             
             # --- Auto-Icon High-Res Injector ---
-            $iconSize = 128
-            $iconUrl = "https://www.google.com/s2/favicons?domain=$(([uri]$Url).Host)&sz=$iconSize"
-            $pngPath = Join-Path $PSScriptRoot "temp_icon.png"
-            $icoPath = Join-Path $PSScriptRoot "icon.ico"
-            $hasIcon = $false
+            $domain = $(([uri]$Url).Host)
+            $png128Path = Join-Path $PSScriptRoot "temp_128.png"
+            $png32Path  = Join-Path $PSScriptRoot "temp_32.png"
+            $icoPath    = Join-Path $PSScriptRoot "icon.ico"
+            $hasIcon    = $false
+            
             try {
-                Invoke-WebRequest -Uri $iconUrl -OutFile $pngPath -UseBasicParsing -ErrorAction Stop
+                Invoke-WebRequest -Uri "https://www.google.com/s2/favicons?domain=$domain&sz=128" -OutFile $png128Path -UseBasicParsing -ErrorAction Stop
+                Invoke-WebRequest -Uri "https://www.google.com/s2/favicons?domain=$domain&sz=32" -OutFile $png32Path -UseBasicParsing -ErrorAction Stop
                 
-                # Natively bypass ImageMagick dependencies by injecting PNG bytes directly into a raw ICO file header block
-                [byte[]] $pngBytes = [System.IO.File]::ReadAllBytes($pngPath)
+                # Natively construct a true "Multi-Size" ICO Header block (2 Images: 128px and 32px)
+                # This explicitly forces Windows to use the sharp pre-scaled 32px version for Taskbars, curing the aliasing blur
+                [byte[]] $b128 = [System.IO.File]::ReadAllBytes($png128Path)
+                [byte[]] $b32  = [System.IO.File]::ReadAllBytes($png32Path)
+                
                 $fs = [System.IO.File]::Create($icoPath)
                 $bw = New-Object System.IO.BinaryWriter($fs)
-                $bw.Write([int16]0); $bw.Write([int16]1); $bw.Write([int16]1) 
-                $bw.Write([byte]$iconSize); $bw.Write([byte]$iconSize); $bw.Write([byte]0); $bw.Write([byte]0)
-                $bw.Write([int16]1); $bw.Write([int16]32)
-                $bw.Write([int32]$pngBytes.Length)
-                $bw.Write([int32]22)
-                $bw.Write($pngBytes)
+                $bw.Write([int16]0); $bw.Write([int16]1); $bw.Write([int16]2) # 2 Images Format
+                
+                # Directory Entry 1 (128x128)
+                $bw.Write([byte]128); $bw.Write([byte]128); $bw.Write([byte]0); $bw.Write([byte]0)
+                $bw.Write([int16]1);  $bw.Write([int16]32)
+                $bw.Write([int32]$b128.Length)
+                $bw.Write([int32]38)  # Offset starts after the two 16-byte Directory Headers + 6-byte Intro Header (38)
+                
+                # Directory Entry 2 (32x32)
+                $bw.Write([byte]32);  $bw.Write([byte]32);  $bw.Write([byte]0); $bw.Write([byte]0)
+                $bw.Write([int16]1);  $bw.Write([int16]32)
+                $bw.Write([int32]$b32.Length)
+                $bw.Write([int32](38 + $b128.Length)) # Offset starts exactly after the 128px PNG payload finishes
+                
+                # Write massive PNG Payloads consecutively
+                $bw.Write($b128)
+                $bw.Write($b32)
                 $bw.Close()
                 
-                Remove-Item $pngPath -Force
-                Write-Host " [ ICON grab ] Ripped crisp $($iconSize)x$($iconSize) high-res icon!" -ForegroundColor Green
+                Remove-Item $png128Path -Force
+                Remove-Item $png32Path -Force
+                Write-Host " [ ICON grab ] Ripped crisp multi-layered ICO (128px & 32px) to fix Taskbar aliasing!" -ForegroundColor Green
                 $hasIcon = $true
             } catch {
                 Write-Host " [ ICON fail ] Could not rip high-res icon. Using OS default." -ForegroundColor DarkGray
