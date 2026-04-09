@@ -5,9 +5,9 @@ using System.IO;
 using System.Reflection;
 
 [assembly: AssemblyTitle("Because launching a full browser just to change your hardware settings is absolutely ridiculous.")]
-[assembly: AssemblyDescription("Anti-Web-App")]
+[assembly: AssemblyDescription("WLMouse")]
 [assembly: AssemblyCompany("Anti-Web-App Foundation")]
-[assembly: AssemblyProduct("Anti-Web-App")]
+[assembly: AssemblyProduct("WLMouse")]
 [assembly: AssemblyCopyright("Copyright C 2026")]
 
 namespace AntiWebApp {
@@ -16,9 +16,9 @@ namespace AntiWebApp {
         static void Main() {
             // ===== CONFIGURATION =====
             string url = "https://gm.wlmouse.gg/#/project/items";
-            int desiredWidth = 1260;
+            int desiredWidth = 1270;
             int desiredHeight = 880;
-            string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AntiWebApp_Profile_b01d21d7");
+            string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AntiWebApp_Profile_e215c44e");
             // =========================
 
             string edge64 = @"C:\Program Files\Microsoft\Edge\Application\msedge.exe";
