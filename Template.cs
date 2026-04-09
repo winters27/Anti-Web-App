@@ -8,9 +8,9 @@ namespace AntiWebApp {
         [STAThread]
         static void Main() {
             // ===== CONFIGURATION =====
-            string url = "https://ENTER_YOUR_APP_URL_HERE.com";
-            int desiredWidth = 1200;
-            int desiredHeight = 800;
+            string url = "https://miceapp.arbiterstudio.com/#/project/items";
+            int desiredWidth = 1350;
+            int desiredHeight = 1020;
             string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AntiWebApp_Profile");
             // =========================
 

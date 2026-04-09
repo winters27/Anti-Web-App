@@ -14,31 +14,26 @@ No browser chrome. No Edge syncing. Just the WebHID connection you need, wrapped
 
 ---
 
-## How to Wrap Your Web App
+## The Setup Wizard (All-In-One Installer)
 
-This is a master template. To customize it to fit your exact hardware (be it a keyboard, mouse, or toaster), follow these 4 steps:
+We have consolidated the entire backend into a single `Setup.bat` wizard. Absolutely no coding or text editing is required.
 
-### 1. Grab Your Web App URL
-Find the official web app link for your hardware (e.g. `https://gm.wlmouse.gg/#/` or `https://miceapp.arbiterstudio.com/#/`).
-Open `Template.ps1` in a text editor and replace the `$Url` variable at the top.
+### 1. Launch the Wizard
+Double-click `Setup.bat` in your folder. A terminal will open and prompt you:
+`[?] Please paste your hardware Web App URL (e.g. https://gm.wlmouse.gg):`
 
-### 2. Visually Resize to Perfection
-Run your freshly edited `Template.ps1` (Right Click -> Run with PowerShell). It will pop up a window. Physically drag the edges of the window with your mouse until all the white space is gone and the inner dashboard is perfectly framed. 
+Paste your link and hit `ENTER`.
 
-Leave the window open.
+### 2. Visually Resize
+The wizard will launch the dashboard for you. Physically drag the edges of the window with your mouse until all the white space is gone and the inner dashboard is perfectly framed exactly how you want it. 
 
-### 3. The Setup Wizard Extraction
-When your window is sized exactly how you want it, simply swap back to the black PowerShell terminal and hit `ENTER`. 
+### 3. Finalize & Compile
+Once your sizing is perfect, click back into the black `Setup.bat` terminal and hit `ENTER`. 
 
-The script will:
-1. Instantly read the exact dimensional bounds of your App on the screen.
-2. Apply native mathematical rounding (e.g. padding a raw `1268x881` up to a clean `1270x880`).
-3. Automatically patch those golden dimensions strictly into your `Template.cs` file.
+The wizard handles everything else automatically:
+1. It rips the exact physical footprint of the window you just drew.
+2. It fetches the site's official `favicon.ico` from the web.
+3. It natively compiles a brand new, silent `Anti-Web-App.exe` executable using Windows' hidden internal C# compiler.
 
-### 4. Compile the Native `.exe`
-With your `Template.cs` completely auto-configured by the setup wizard:
-1. Simply double-click **`Compile.bat`**. 
-2. It will securely and silently build your brand new `Template.exe` using Windows' internal C# compiler.
-3. You can now rename `Template.exe` to whatever your hardware is (e.g. `Akitsu.exe`) and pin it anywhere!
+Done! You now have a blazingly fast, standalone `.exe` you can rename to whatever your hardware is and pin to your taskbar!
 
-Done! You now have a blazingly fast, standalone `.exe` you can pin to your taskbar that never requires you to touch Edge again.

@@ -1,15 +1,25 @@
-# Anti-Web-App Template Launcher
+# Anti-Web-App Interactive Wizard Orchestrator
 $ErrorActionPreference = 'Stop'
+Clear-Host
 
-# ===== CONFIGURATION =====
-$Url           = 'https://miceapp.arbiterstudio.com/#/project/items'
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "      Anti-Web-App | Native Desktop Wrapper Setup" -ForegroundColor White
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host ""
+$Url = Read-Host " [?] Please paste your hardware Web App URL (e.g. https://gm.wlmouse.gg) "
+Write-Host ""
+
+if ([string]::IsNullOrWhiteSpace($Url)) {
+    Write-Host " [ ERROR ] URL cannot be empty. Exiting..." -ForegroundColor Red
+    Start-Sleep 3
+    Exit
+}
+
 $DesiredWidth  = 1200
 $DesiredHeight = 800
-# Isolated profile directory ensures Chromium respects launch arguments and prevents background-process hooking failures.
-$ProfileDir    = "$env:LOCALAPPDATA\AntiWebApp_Profile"
-# =========================
+$ProfileDir    = "$env:LOCALAPPDATA\AntiWebApp_Profile_$([guid]::NewGuid().ToString().Substring(0,8))"
 
-# Edge path resolution (Because we all have it forced on us anyway)
+# Edge path resolution 
 $edge64  = 'C:\Program Files\Microsoft\Edge\Application\msedge.exe'
 $edge32  = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 $EdgeExe = if (Test-Path $edge64) { $edge64 } elseif (Test-Path $edge32) { $edge32 } else { 'msedge.exe' }
@@ -39,14 +49,8 @@ $ArgsLine = @(
 
 Start-Process -FilePath $EdgeExe -ArgumentList $ArgsLine
 
-# ===== SETUP WIZARD AUTO-EXTRACTOR =====
-$uriHost = ([uri]$Url).Host
-
-Write-Host ""
-Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host " [ WAITING ] Web App Launched!" -ForegroundColor Green
-Write-Host " Go ahead and navigate your hardware dashboard."
-Write-Host " Drag the window edges until it fits perfectly."
+Write-Host " Go ahead and drag the window edges until all whitespace is gone."
 Write-Host ""
 Write-Host " When you are 100% finished sizing, press ENTER here..." -ForegroundColor Yellow
 Read-Host
@@ -72,41 +76,58 @@ foreach ($proc in Get-Process msedge -ErrorAction SilentlyContinue) {
         if ($w -gt 100 -and $h -gt 100) {
             $cleanW = [math]::Round($w / 10) * 10
             $cleanH = [math]::Round($h / 10) * 10
+            $found = $true
             
-            Write-Host ""
-            Write-Host " [ SUCCESS ] Extracted Dimensions: $($w)x$($h)" -ForegroundColor Green
-            Write-Host " [ PADDING applied ] Snapping to: $($cleanW)x$($cleanH)" -ForegroundColor Yellow
+            Write-Host " [ SUCCESS ] Extracted Dimensions: $($cleanW)x$($cleanH)" -ForegroundColor Green
             
             # --- Auto-Icon Downloader ---
             $iconUrl = "$(([uri]$Url).Scheme)://$(([uri]$Url).Host)/favicon.ico"
             $iconPath = Join-Path $PSScriptRoot "icon.ico"
+            $hasIcon = $false
             try {
                 Invoke-WebRequest -Uri $iconUrl -OutFile $iconPath -UseBasicParsing -ErrorAction Stop
-                Write-Host " [ ICON grab ] Automatically downloaded site favicon to icon.ico!" -ForegroundColor Green
+                Write-Host " [ ICON ] Successfully ripped favicon from $(([uri]$Url).Host)" -ForegroundColor Green
+                $hasIcon = $true
             } catch {
-                Write-Host " [ ICON fail ] Could not auto-download $iconUrl. You may need to manual supply icon.ico." -ForegroundColor DarkGray
+                Write-Host " [ ICON fail ] Could not auto-download a favicon. Compiling with default OS icon." -ForegroundColor DarkGray
             }
             
             # --- Auto-Patch Template.cs ---
             $csPath = Join-Path $PSScriptRoot "Template.cs"
             if (Test-Path $csPath) {
                 $content = Get-Content $csPath
-                # Ensure the url dynamically pushes over
                 $content = $content -replace 'string url = ".*?";', "string url = `"$Url`";"
                 $content = $content -replace 'int desiredWidth = \d+;', "int desiredWidth = $cleanW;"
                 $content = $content -replace 'int desiredHeight = \d+;', "int desiredHeight = $cleanH;"
                 $content | Set-Content $csPath
-                Write-Host " [ AUTO-PATCH ] Template.cs updated with URL and Dimensions." -ForegroundColor Cyan
             }
-            $found = $true
+            
+            # --- AUTO COMPILER ---
+            Write-Host " [ COMPILER ] Building your Native Desktop .exe securely..." -ForegroundColor Cyan
+            $csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+            
+            $OutFile = "Anti-Web-App.exe"
+            if ($hasIcon -and (Test-Path $iconPath)) {
+                & $csc /target:winexe /out:$OutFile /win32icon:$iconPath $csPath | Out-Null
+            } else {
+                & $csc /target:winexe /out:$OutFile $csPath | Out-Null
+            }
+
+            Write-Host ""
+            Write-Host "============================================================" -ForegroundColor Cyan
+            Write-Host " [ DONE ] Your native desktop interface has been successfully compiled!" -ForegroundColor DarkYellow
+            Write-Host "          You can now pin '$OutFile' to your desktop." -ForegroundColor White
+            Write-Host "============================================================" -ForegroundColor Cyan
+            Write-Host ""
+            
             break
         }
     }
 }
 
 if (-not $found) {
-    Write-Host " [ ERROR ] Could not detect the active window. Ensure it is still open." -ForegroundColor Red
+    Write-Host " [ ERROR ] Could not detect window. Make sure you don't close it before hitting Enter." -ForegroundColor Red
 }
 
-Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host ""
+Write-Host " Press any key to close Setup Wizard..."
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
