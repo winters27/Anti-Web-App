@@ -27,35 +27,19 @@ Run your freshly edited `Template.ps1` (Right Click -> Run with PowerShell). It 
 
 Leave the window open.
 
-### 3. Extract the Golden Dimensions
-While your perfectly sized window is still open, paste this quick command into any normal PowerShell prompt to extract the exact math:
+### 3. The Setup Wizard Extraction
+When your window is sized exactly how you want it, simply swap back to the black PowerShell terminal and hit `ENTER`. 
 
-```powershell
-$cs = @"
-using System;
-using System.Runtime.InteropServices;
-public static class W32 {
-    [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
-    [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
-}
-"@
-Add-Type -TypeDefinition $cs -ErrorAction SilentlyContinue
-Get-Process msedge | Where-Object { $_.MainWindowTitle } | ForEach-Object {
-    $rect = New-Object W32+RECT
-    [W32]::GetWindowRect($_.MainWindowHandle, [ref]$rect) | Out-Null
-    $w = $rect.Right - $rect.Left
-    $h = $rect.Bottom - $rect.Top
-    "Title: $($_.MainWindowTitle), Width: $w, Height: $h"
-}
-```
-Find the exact `Width` and `Height` returned for your Web App!
+The script will:
+1. Instantly read the exact dimensional bounds of your App on the screen.
+2. Apply native mathematical rounding (e.g. padding a raw `1268x881` up to a clean `1270x880`).
+3. Automatically patch those golden dimensions strictly into your `Template.cs` file.
 
 ### 4. Compile the Native `.exe`
-
-1. Open `Template.cs`.
-2. Update the `url`, `desiredWidth`, and `desiredHeight` variables using the exact numbers you extracted.
-3. Drop an icon file (like `icon.ico`) into the same folder as `Template.cs`. 
-4. Run this magical 1-liner in your terminal to compile your new standalone dashboard natively, securely, and silently. Note: replace `Template.exe` with whatever you want to call it!
+With your `Template.cs` completely auto-configured by the setup wizard:
+1. Open `Template.cs` and ensure the `url` variable manually matches step 1.
+2. Drop an icon file (like `icon.ico`) into the same folder. 
+3. Run this magical 1-liner in your terminal to compile your new standalone dashboard natively, securely, and silently. Note: replace `Template.exe` with whatever you want to call it!
 
 ```powershell
 & "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /target:winexe /out:Template.exe /win32icon:icon.ico Template.cs

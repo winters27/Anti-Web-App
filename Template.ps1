@@ -41,3 +41,65 @@ $ArgsLine = @(
 
 # Launch the Application
 Start-Process -FilePath $EdgeExe -ArgumentList $ArgsLine
+
+# ===== SETUP WIZARD AUTO-EXTRACTOR =====
+$uriHost = ([uri]$Url).Host
+
+Write-Host ""
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host " [ WAITING ] Web App Launched!" -ForegroundColor Green
+Write-Host " Go ahead and navigate your hardware dashboard."
+Write-Host " Drag the window edges until all whitespace is gone and it fits perfectly."
+Write-Host ""
+Write-Host " When you are 100% finished sizing, press ENTER here..." -ForegroundColor Yellow
+Read-Host
+
+$cs = @"
+using System;
+using System.Runtime.InteropServices;
+public static class W32 {
+    [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
+    [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
+}
+"@
+Add-Type -TypeDefinition $cs -ErrorAction SilentlyContinue
+
+$found = $false
+foreach ($proc in Get-Process msedge -ErrorAction SilentlyContinue) {
+    if ($proc.MainWindowTitle) {
+        $rect = New-Object W32+RECT
+        [W32]::GetWindowRect($proc.MainWindowHandle, [ref]$rect) | Out-Null
+        $w = $rect.Right - $rect.Left
+        $h = $rect.Bottom - $rect.Top
+        
+        # Super simple check: exclude tiny background invisible handles
+        if ($w -gt 100 -and $h -gt 100) {
+            # Apply Native Rounding/Padding to snap to clean digits (e.g., 1268 -> 1270)
+            $cleanW = [math]::Round($w / 10) * 10
+            $cleanH = [math]::Round($h / 10) * 10
+            
+            Write-Host ""
+            Write-Host " [ SUCCESS ] Extracted Dimensions: $($w)x$($h)" -ForegroundColor Green
+            Write-Host " [ PADDING applied ] Snapping to: $($cleanW)x$($cleanH)" -ForegroundColor Yellow
+            
+            # Auto-patch Template.cs
+            $csPath = Join-Path $PSScriptRoot "Template.cs"
+            if (Test-Path $csPath) {
+                $content = Get-Content $csPath
+                $content = $content -replace "int desiredWidth = \d+;", "int desiredWidth = $cleanW;"
+                $content = $content -replace "int desiredHeight = \d+;", "int desiredHeight = $cleanH;"
+                $content | Set-Content $csPath
+                Write-Host " [ ROOT ] Template.cs automatically updated." -ForegroundColor Cyan
+            }
+            $found = $true
+            break
+        }
+    }
+}
+
+if (-not $found) {
+    Write-Host " [ ERROR ] Could not detect the active Edge window handle. Please ensure the app is still open when pressing Enter." -ForegroundColor Red
+}
+
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host ""
