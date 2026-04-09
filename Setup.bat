@@ -7,23 +7,56 @@ exit /b
 
 # --- Anti-Web-App Interactive Wizard Orchestrator ---
 $ErrorActionPreference = 'Stop'
-Clear-Host
+
+function Write-Header {
+    Clear-Host
+    Write-Host ""
+    Write-Host "    ░█████╗░███╗░░██╗████████╗██╗" -ForegroundColor Cyan
+    Write-Host "    ██╔══██╗████╗░██║╚══██╔══╝██║" -ForegroundColor Cyan
+    Write-Host "    ███████║██╔██╗██║░░░██║░░░██║" -ForegroundColor DarkCyan
+    Write-Host "    ██╔══██║██║╚████║░░░██║░░░██║" -ForegroundColor DarkCyan
+    Write-Host "    ██║░░██║██║░╚███║░░░██║░░░██║" -ForegroundColor DarkGray
+    Write-Host "    ╚═╝░░╚═╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  ╭────────────────────────────────────────────────╮" -ForegroundColor DarkGray
+    Write-Host "  │  " -NoNewline -ForegroundColor DarkGray
+    Write-Host "       NATIVE WEB-APP HARDWARE COMPILER     " -NoNewline -ForegroundColor White
+    Write-Host "  │" -ForegroundColor DarkGray
+    Write-Host "  ╰────────────────────────────────────────────────╯" -ForegroundColor DarkGray
+    Write-Host ""
+}
+
+function Write-Step ($Prefix, $Text, $Color="White", $PrefixColor="Cyan") {
+    Write-Host "  [" -NoNewline -ForegroundColor DarkGray
+    Write-Host $Prefix -NoNewline -ForegroundColor $PrefixColor
+    Write-Host "] " -NoNewline -ForegroundColor DarkGray
+    Write-Host $Text -ForegroundColor $Color
+}
+
+function Write-Info ($Text) {
+    Write-Host "      │ " -NoNewline -ForegroundColor DarkGray
+    Write-Host $Text -ForegroundColor DarkGray
+}
 
 $ScriptDir = $env:LAUNCH_DIR.TrimEnd('\')
 
-Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "      Anti-Web-App | Native Desktop Wrapper Setup" -ForegroundColor White
-Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host ""
-$Url = Read-Host " [?] Please paste your hardware Web App URL (e.g. https://dashboard.your-device.com) "
+Write-Header
+Write-Step "1" "Initial Configuration" "White"
+Write-Info "We need the exact URL of your hardware's client interface."
+Write-Host "      ╰─▶ " -NoNewline -ForegroundColor DarkGray
+$Url = Read-Host "URL "
 
 if ([string]::IsNullOrWhiteSpace($Url)) {
-    Write-Host " [ ERROR ] URL cannot be empty. Exiting..." -ForegroundColor Red
+    Write-Host "`n  [!] URL cannot be empty. Exiting..." -ForegroundColor Red
     Start-Sleep 3
     Exit
 }
 
-$AppName = Read-Host " [?] What do you want to name the executable? (e.g. DashboardApp) "
+Write-Host ""
+Write-Step "2" "Executable Profiling" "White"
+Write-Info "What should the compiled standalone desktop app be named?"
+Write-Host "      ╰─▶ " -NoNewline -ForegroundColor DarkGray
+$AppName = Read-Host "Name (e.g. DashboardApp) "
 if ([string]::IsNullOrWhiteSpace($AppName)) {
     $AppName = "Anti-Web-App"
 }
@@ -63,12 +96,12 @@ $ArgsLine = @(
 
 Start-Process -FilePath $EdgeExe -ArgumentList $ArgsLine
 
-Write-Host " [ WAITING ] Web App Launched!" -ForegroundColor Green
-Write-Host " Go ahead and drag the window edges until all whitespace is gone."
 Write-Host ""
-Write-Host " When you are 100% finished sizing, press ENTER here..." -ForegroundColor Yellow
-Read-Host
-
+Write-Step "3" "Extracting Sizing Constraints" "White"
+Write-Info "Launching Edge frame... border it to frame your dashboard perfectly."
+Write-Info "When you are 100% finished framing, press ENTER here..."
+Write-Host "      ╰─▶ " -NoNewline -ForegroundColor DarkGray
+Read-Host "Press ENTER to lock dimensions "
 $cs = @"
 using System;
 using System.Runtime.InteropServices;
@@ -96,9 +129,12 @@ foreach ($proc in Get-Process msedge -ErrorAction SilentlyContinue) {
             
             $found = $true
             
-            Write-Host " [ SUCCESS ] Extracted Dimensions: $($cleanW)x$($cleanH)" -ForegroundColor Green
+            Write-Host ""
+            Write-Step "✦" "Dimensions Captured:" "Green" "Green"
+            Write-Info "$($cleanW)px Width x $($cleanH)px Height"
             
-            # --- Advanced Multi-Res Auto-Icon Generator ---
+            Write-Host ""
+            Write-Step "4" "Multi-Res ICO Compiler" "White"
             $domain = $(([uri]$Url).Host)
             $pngPath = Join-Path $ScriptDir "temp_src.png"
             $icoPath = Join-Path $ScriptDir "icon.ico"
@@ -186,13 +222,16 @@ public static class IconMaker {
                 [IconMaker]::CompileMultiIcon($pngPath, $icoPath)
                 
                 Remove-Item $pngPath -Force
-                Write-Host " [ ICON grab ] Dynamically forged 6-Layer Multi-Res Uncompressed ICO! Taskbar will be crisp!" -ForegroundColor Green
+                Write-Info "Dynamically forged Uncompressed 6-Layer ICO."
                 $hasIcon = $true
             } catch {
-                Write-Host " [ ICON fail ] Could not compile advanced ICO. Using OS default." -ForegroundColor DarkGray
+                Write-Info "Could not compile custom icon. Using default OS executable icon."
             }
             
-            # --- Auto-Patch Template.cs ---
+            Write-Host ""
+            Write-Step "5" "Native Assembly Compilation" "White"
+            Write-Info "Injecting metadata and invoking csc.exe..."
+
             $csPath = Join-Path $ScriptDir "Template.cs"
             if (Test-Path $csPath) {
                 $content = Get-Content $csPath
@@ -200,7 +239,7 @@ public static class IconMaker {
                 $content = $content -replace 'int desiredWidth = \d+;', "int desiredWidth = $cleanW;"
                 $content = $content -replace 'int desiredHeight = \d+;', "int desiredHeight = $cleanH;"
                 
-                $content = $content -replace '\[assembly: AssemblyTitle\(".*?"\)\]', "[assembly: AssemblyTitle(`"$AppName`")]"
+                $content = $content -replace '\[assembly: AssemblyDescription\(".*?"\)\]', "[assembly: AssemblyDescription(`"$AppName`")]"
                 $content = $content -replace '\[assembly: AssemblyProduct\(".*?"\)\]', "[assembly: AssemblyProduct(`"$AppName`")]"
                 
                 $newProfile = "AntiWebApp_Profile_$([guid]::NewGuid().ToString().Substring(0,8))"
@@ -209,10 +248,7 @@ public static class IconMaker {
                 $content | Set-Content $csPath
             }
             
-            # --- AUTO COMPILER ---
-            Write-Host " [ COMPILER ] Building your Native Desktop .exe securely..." -ForegroundColor Cyan
             $csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-            
             $OutFile = "$AppName.exe"
             
             if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
@@ -226,10 +262,12 @@ public static class IconMaker {
             if (Test-Path $icoPath) { Remove-Item $icoPath -Force -ErrorAction SilentlyContinue }
 
             Write-Host ""
-            Write-Host "============================================================" -ForegroundColor Cyan
-            Write-Host " [ DONE ] Your native desktop app '$AppName' has compiled successfully!" -ForegroundColor DarkYellow
-            Write-Host "          You can now pin '$OutFile' to your desktop." -ForegroundColor White
-            Write-Host "============================================================" -ForegroundColor Cyan
+            Write-Host "  ╭────────────────────────────────────────────────╮" -ForegroundColor DarkGray
+            Write-Host "  │" -NoNewline -ForegroundColor DarkGray
+            Write-Host " SUCCESS: " -NoNewline -ForegroundColor Green
+            Write-Host "'$AppName.exe' has been natively forged. " -NoNewline -ForegroundColor White
+            Write-Host "│" -ForegroundColor DarkGray
+            Write-Host "  ╰────────────────────────────────────────────────╯" -ForegroundColor DarkGray
             Write-Host ""
             
             break
@@ -238,8 +276,8 @@ public static class IconMaker {
 }
 
 if (-not $found) {
-    Write-Host " [ ERROR ] Could not detect window. Make sure you don't close it before hitting Enter." -ForegroundColor Red
+    Write-Host "`n  [!] Could not detect window! Make sure you don't close it before hitting Enter." -ForegroundColor Red
 }
 
-Write-Host " Press any key to close Setup Wizard..."
+Write-Host "`n  Press any key to gracefully close system wrapper..." -ForegroundColor DarkGray
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
