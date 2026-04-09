@@ -7,7 +7,6 @@ Write-Host "      Anti-Web-App | Native Desktop Wrapper Setup" -ForegroundColor 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 $Url = Read-Host " [?] Please paste your hardware Web App URL (e.g. https://gm.wlmouse.gg) "
-Write-Host ""
 
 if ([string]::IsNullOrWhiteSpace($Url)) {
     Write-Host " [ ERROR ] URL cannot be empty. Exiting..." -ForegroundColor Red
@@ -15,6 +14,12 @@ if ([string]::IsNullOrWhiteSpace($Url)) {
     Exit
 }
 
+$AppName = Read-Host " [?] What do you want to name the executable? (e.g. Akitsu) "
+if ([string]::IsNullOrWhiteSpace($AppName)) {
+    $AppName = "Anti-Web-App"
+}
+
+Write-Host ""
 $DesiredWidth  = 1200
 $DesiredHeight = 800
 $ProfileDir    = "$env:LOCALAPPDATA\AntiWebApp_Profile_$([guid]::NewGuid().ToString().Substring(0,8))"
@@ -80,16 +85,32 @@ foreach ($proc in Get-Process msedge -ErrorAction SilentlyContinue) {
             
             Write-Host " [ SUCCESS ] Extracted Dimensions: $($cleanW)x$($cleanH)" -ForegroundColor Green
             
-            # --- Auto-Icon Downloader ---
-            $iconUrl = "$(([uri]$Url).Scheme)://$(([uri]$Url).Host)/favicon.ico"
-            $iconPath = Join-Path $PSScriptRoot "icon.ico"
+            # --- Auto-Icon High-Res Injector ---
+            $iconSize = 128
+            $iconUrl = "https://www.google.com/s2/favicons?domain=$(([uri]$Url).Host)&sz=$iconSize"
+            $pngPath = Join-Path $PSScriptRoot "temp_icon.png"
+            $icoPath = Join-Path $PSScriptRoot "icon.ico"
             $hasIcon = $false
             try {
-                Invoke-WebRequest -Uri $iconUrl -OutFile $iconPath -UseBasicParsing -ErrorAction Stop
-                Write-Host " [ ICON ] Successfully ripped favicon from $(([uri]$Url).Host)" -ForegroundColor Green
+                Invoke-WebRequest -Uri $iconUrl -OutFile $pngPath -UseBasicParsing -ErrorAction Stop
+                
+                # Natively bypass ImageMagick dependencies by injecting PNG bytes directly into a raw ICO file header block
+                [byte[]] $pngBytes = [System.IO.File]::ReadAllBytes($pngPath)
+                $fs = [System.IO.File]::Create($icoPath)
+                $bw = New-Object System.IO.BinaryWriter($fs)
+                $bw.Write([int16]0); $bw.Write([int16]1); $bw.Write([int16]1) 
+                $bw.Write([byte]$iconSize); $bw.Write([byte]$iconSize); $bw.Write([byte]0); $bw.Write([byte]0)
+                $bw.Write([int16]1); $bw.Write([int16]32)
+                $bw.Write([int32]$pngBytes.Length)
+                $bw.Write([int32]22)
+                $bw.Write($pngBytes)
+                $bw.Close()
+                
+                Remove-Item $pngPath -Force
+                Write-Host " [ ICON grab ] Ripped crisp $($iconSize)x$($iconSize) high-res icon!" -ForegroundColor Green
                 $hasIcon = $true
             } catch {
-                Write-Host " [ ICON fail ] Could not auto-download a favicon. Compiling with default OS icon." -ForegroundColor DarkGray
+                Write-Host " [ ICON fail ] Could not rip high-res icon. Using OS default." -ForegroundColor DarkGray
             }
             
             # --- Auto-Patch Template.cs ---
@@ -100,7 +121,6 @@ foreach ($proc in Get-Process msedge -ErrorAction SilentlyContinue) {
                 $content = $content -replace 'int desiredWidth = \d+;', "int desiredWidth = $cleanW;"
                 $content = $content -replace 'int desiredHeight = \d+;', "int desiredHeight = $cleanH;"
                 
-                # Dynamically generate a brand new Isolated Profile name so the compiled exe doesn't inherit old cached window sizes
                 $newProfile = "AntiWebApp_Profile_$([guid]::NewGuid().ToString().Substring(0,8))"
                 $content = $content -replace 'string profileDir = Path\.Combine\(Environment\.GetFolderPath\(Environment\.SpecialFolder\.LocalApplicationData\), ".*?"\);', "string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), `"$newProfile`");"
                 
@@ -111,16 +131,20 @@ foreach ($proc in Get-Process msedge -ErrorAction SilentlyContinue) {
             Write-Host " [ COMPILER ] Building your Native Desktop .exe securely..." -ForegroundColor Cyan
             $csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
             
-            $OutFile = "Anti-Web-App.exe"
-            if ($hasIcon -and (Test-Path $iconPath)) {
-                & $csc /target:winexe /out:$OutFile /win32icon:$iconPath $csPath | Out-Null
+            $OutFile = "$AppName.exe"
+            
+            # Safe wipe of previous executable run if naming repeats
+            if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
+
+            if ($hasIcon -and (Test-Path $icoPath)) {
+                & $csc /target:winexe /out:$OutFile /win32icon:$icoPath $csPath | Out-Null
             } else {
                 & $csc /target:winexe /out:$OutFile $csPath | Out-Null
             }
 
             Write-Host ""
             Write-Host "============================================================" -ForegroundColor Cyan
-            Write-Host " [ DONE ] Your native desktop interface has been successfully compiled!" -ForegroundColor DarkYellow
+            Write-Host " [ DONE ] Your native desktop app '$AppName' has compiled successfully!" -ForegroundColor DarkYellow
             Write-Host "          You can now pin '$OutFile' to your desktop." -ForegroundColor White
             Write-Host "============================================================" -ForegroundColor Cyan
             Write-Host ""
