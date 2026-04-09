@@ -37,12 +37,8 @@ The script will:
 
 ### 4. Compile the Native `.exe`
 With your `Template.cs` completely auto-configured by the setup wizard:
-1. Open `Template.cs` and ensure the `url` variable manually matches step 1.
-2. Drop an icon file (like `icon.ico`) into the same folder. 
-3. Run this magical 1-liner in your terminal to compile your new standalone dashboard natively, securely, and silently. Note: replace `Template.exe` with whatever you want to call it!
-
-```powershell
-& "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /target:winexe /out:Template.exe /win32icon:icon.ico Template.cs
-```
+1. Simply double-click **`Compile.bat`**. 
+2. It will securely and silently build your brand new `Template.exe` using Windows' internal C# compiler.
+3. You can now rename `Template.exe` to whatever your hardware is (e.g. `Akitsu.exe`) and pin it anywhere!
 
 Done! You now have a blazingly fast, standalone `.exe` you can pin to your taskbar that never requires you to touch Edge again.
