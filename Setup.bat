@@ -200,6 +200,9 @@ public static class IconMaker {
                 $content = $content -replace 'int desiredWidth = \d+;', "int desiredWidth = $cleanW;"
                 $content = $content -replace 'int desiredHeight = \d+;', "int desiredHeight = $cleanH;"
                 
+                $content = $content -replace '\[assembly: AssemblyTitle\(".*?"\)\]', "[assembly: AssemblyTitle(`"$AppName`")]"
+                $content = $content -replace '\[assembly: AssemblyProduct\(".*?"\)\]', "[assembly: AssemblyProduct(`"$AppName`")]"
+                
                 $newProfile = "AntiWebApp_Profile_$([guid]::NewGuid().ToString().Substring(0,8))"
                 $content = $content -replace 'string profileDir = Path\.Combine\(Environment\.GetFolderPath\(Environment\.SpecialFolder\.LocalApplicationData\), ".*?"\);', "string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), `"$newProfile`");"
                 
