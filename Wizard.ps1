@@ -81,6 +81,10 @@ foreach ($proc in Get-Process msedge -ErrorAction SilentlyContinue) {
         if ($w -gt 100 -and $h -gt 100) {
             $cleanW = [math]::Round($w / 10) * 10
             $cleanH = [math]::Round($h / 10) * 10
+            
+            # Immediately close the user's sizing window so they don't have to do it manually
+            try { $proc.Kill() } catch { }
+            
             $found = $true
             
             Write-Host " [ SUCCESS ] Extracted Dimensions: $($cleanW)x$($cleanH)" -ForegroundColor Green
