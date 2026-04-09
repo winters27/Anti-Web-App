@@ -99,6 +99,11 @@ foreach ($proc in Get-Process msedge -ErrorAction SilentlyContinue) {
                 $content = $content -replace 'string url = ".*?";', "string url = `"$Url`";"
                 $content = $content -replace 'int desiredWidth = \d+;', "int desiredWidth = $cleanW;"
                 $content = $content -replace 'int desiredHeight = \d+;', "int desiredHeight = $cleanH;"
+                
+                # Dynamically generate a brand new Isolated Profile name so the compiled exe doesn't inherit old cached window sizes
+                $newProfile = "AntiWebApp_Profile_$([guid]::NewGuid().ToString().Substring(0,8))"
+                $content = $content -replace 'string profileDir = Path\.Combine\(Environment\.GetFolderPath\(Environment\.SpecialFolder\.LocalApplicationData\), ".*?"\);', "string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), `"$newProfile`");"
+                
                 $content | Set-Content $csPath
             }
             
