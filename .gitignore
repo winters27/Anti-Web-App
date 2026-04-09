@@ -1,0 +1,8 @@
+# Compiled Executables
+*.exe
+
+# Downloaded Icons
+icon.ico
+
+# Powershell Profiles
+AntiWebApp_Profile_*
