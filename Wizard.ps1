@@ -223,6 +223,9 @@ public static class IconMaker {
                 & $csc /target:winexe /out:$OutFile $csPath | Out-Null
             }
 
+            # Cleanup the temporary icon since it's fully embedded natively inside the .exe
+            if (Test-Path $icoPath) { Remove-Item $icoPath -Force -ErrorAction SilentlyContinue }
+
             Write-Host ""
             Write-Host "============================================================" -ForegroundColor Cyan
             Write-Host " [ DONE ] Your native desktop app '$AppName' has compiled successfully!" -ForegroundColor DarkYellow
